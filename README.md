@@ -1,4 +1,4 @@
-# julia-register-custom-registry
+# register-pkg-in-registry
 
 _A GitHub action to register Julia packages in custom (e.g. private) registries._
 
@@ -42,7 +42,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v3
       - uses: julia-actions/cache@v3
-      - uses: julia-actions/julia-register-custom-registry@v0.4
+      - uses: julia-actions/register-pkg-in-registry@v0.4
         with:
           registry: YOUR_ORGANIZATION/YOUR_REGISTRY_REPO
         env:
@@ -76,7 +76,7 @@ jobs:
           owner: YOUR_ORGANIZATION
           repositories: |
             YOUR_REGISTRY_REPO
-      - uses: julia-actions/julia-register-custom-registry@v0.4
+      - uses: julia-actions/register-pkg-in-registry@v0.4
         with:
           registry: YOUR_ORGANIZATION/YOUR_REGISTRY_REPO
         env:
