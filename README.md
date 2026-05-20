@@ -1,22 +1,22 @@
-# julia-register
+# julia-register-custom-registry
 
-_A GitHub action to register Julia packages in federated registries._
-
-You can think of it as the official [Register Julia Package](https://github.com/marketplace/actions/register-julia-package) action but for private registries.
+_A GitHub action to register Julia packages in custom (e.g. private) registries._
 
 ## Options
 
 ### Inputs
 
-- `registry`: GitHub URL to the private registry.
-- `push`: Optional. If `true`, push the branch to the registry. Defaults to `true`.
+- `registry` (required): GitHub repository of the private registry (in the form `owner/repository`).
+- `subdirectory` (optional): Subdirectory of the repository where the package lives.
+  Defaults to `.`.
+- `push` (optional): If `true`, push the branch to the registry. Defaults to `true`.
   - Defaults to `true`.
-- `branch`: Optional. If `inputs.push=true`, branch name where the registering package will be uploaded.
+- `branch` (optional): If `inputs.push=true`, branch name where the registering package will be uploaded.
   - Defaults to the string returned by `RegistryTools.registration_branch`.
-- `name`: Optional. Name of the committing user.
-  - Defaults to `github-actions[bot]`.
-- `email`: Optional. Email of the committing user.
-  - Defaults to `41898282+github-actions[bot]@users.noreply.github.com`.
+- `name` (optional): Name of the committing user.
+  - Defaults to `${{ github.actor }}`.
+- `email` (optional): Email of the committing user.
+  - Defaults to `${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com`.
 
 ### Outputs
 
@@ -31,21 +31,54 @@ You can think of it as the official [Register Julia Package](https://github.com/
 
 ```yaml
 name: Register Package
+
+on:
+  workflow_dispatch:
+
+jobs:
+  register:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: julia-actions/setup-julia@v3
+      - uses: julia-actions/cache@v3
+      - uses: julia-actions/julia-register-custom-registry@v0.4
+        with:
+          registry: YOUR_ORGANIZATION/YOUR_REGISTRY_REPO
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_PAT }}
+```
+
+## Requirements
+
+`GITHUB_TOKEN` must be set to a token configured with _Contents_ and _Pull Requests_ write permissions on the registry repository, otherwise the workflow won't be able to push the branch to the registry repository.
+
+If all your repositories (custom registry and the Julia packages) live within the same organisation, you can set up a [GitHub App](https://docs.github.com/en/apps/overview) to automatically generate an ephemeral token with the [`actions/create-github-app-token`](https://github.com/actions/create-github-app-token) workflow:
+
+```yaml
+name: Register Package
 on:
   workflow_dispatch:
 jobs:
   register:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: julia-actions/setup-julia@v1
-      - uses: bsc-quantic/julia-register@v0.1.3
+      - uses: actions/checkout@v6
+      - uses: julia-actions/setup-julia@v3
+      - uses: julia-actions/cache@v3
+      - uses: actions/create-github-app-token@v3
+        id: generate_token
         with:
-          registry: https://github.com/YOUR_ORGANIZATION/YOUR_REGISTRY_REPO
+          client-id: "${{ secrets.APP_ID }}"
+          private-key: "${{ secrets.APP_PRIVATE_KEY }}"
+          permission-contents: "write"
+          permission-pull-requests: "write"
+          owner: YOUR_ORGANIZATION
+          repositories: |
+            YOUR_REGISTRY_REPO
+      - uses: julia-actions/julia-register-custom-registry@v0.4
+        with:
+          registry: YOUR_ORGANIZATION/YOUR_REGISTRY_REPO
         env:
-          GITHUB_TOKEN: ${{ secrets.MY_PAT }}
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
 ```
-
-## Troubleshooting
-
-Most probably, you will need a Personal Access Token (PAT) configured with _Contents_ permissions on the registry repository. If not, the GitHub action won't be able to push the branch to the registry repository.
