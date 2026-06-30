@@ -53,6 +53,7 @@ pr = cd(mktempdir()) do
         registry_deps=[general_reg_url],
         push=push,
         branch=branch,
+        subdir=subdirectory,
         gitconfig=Dict(
             "user.name" => name,
             "user.email" => email,
@@ -127,6 +128,7 @@ open(ENV["GITHUB_OUTPUT"], "w") do io
     println(io, "hash=$tree_hash")
     println(io, "branch=$branch")
     println(io, "path=$(LibGit2.path(registry_repo))")
+    println(io, "subdirectory=", subdirectory)
 end
 
 open(ENV["GITHUB_STEP_SUMMARY"], "w") do io
@@ -140,6 +142,7 @@ open(ENV["GITHUB_STEP_SUMMARY"], "w") do io
         - UUID: $(project.uuid)
         - Version: $(project.version)
         - Pull Request: $(pr.html_url.uri)
+        - Subdirectory: $(subdirectory)
         """
     )
 end
