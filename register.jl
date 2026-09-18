@@ -1,4 +1,3 @@
-using Pkg: GitTools
 using GitHub: GitHub
 using Registrator: Registrator
 using RegistryTools: RegistryTools
@@ -30,7 +29,13 @@ isnothing(project) && error("Project file not found")
 @info "Project" project_path project.name project.uuid project.version
 
 commit_hash = LibGit2.head(pkg_local_repo_path)
-tree_hash = bytes2hex(GitTools.tree_hash(pkg_local_repo_path))
+# Take the tree hash of the package directory from the committed tree rather than from
+# the working directory, so that untracked or modified files don't affect it.  LibGit2
+# doesn't understand paths like `.` or `./Sub` in `HEAD:<path>`, so normalise the path
+# first; an empty path refers to the top-level tree.
+tree_path = normpath(subdirectory)
+tree_path = tree_path == "." ? "" : replace(tree_path, '\\' => '/')
+tree_hash = string(LibGit2.GitHash(LibGit2.GitTree(pkg_local_repo, "$(commit_hash):$(tree_path)")))
 @info "Hash" commit_hash tree_hash
 
 const private_reg_url = "https://github.com/$(registry).git"
